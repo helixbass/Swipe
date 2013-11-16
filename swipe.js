@@ -28,11 +28,12 @@ function Swipe(container, options) {
   // quit if no root element
   if (!container) return;
   var element = container.children[0];
-  var slides, slidePos, width, length;
+  var slides, slidePos, width, fullWidth, length;
   options = options || {};
   var index = parseInt(options.startSlide, 10) || 0;
   var speed = options.speed || 300;
   options.continuous = options.continuous !== undefined ? options.continuous : true;
+  var widthRatio = options.widthRatio || 1;
 
   function setup() {
 
@@ -54,7 +55,8 @@ function Swipe(container, options) {
     slidePos = new Array(slides.length);
 
     // determine width of each slide
-    width = container.getBoundingClientRect().width || container.offsetWidth;
+    fullWidth = container.getBoundingClientRect().width || container.offsetWidth;
+    width = fullWidth * widthRatio;
 
     element.style.width = (slides.length * width) + 'px';
 
@@ -69,7 +71,19 @@ function Swipe(container, options) {
 
       if (browser.transitions) {
         slide.style.left = (pos * -width) + 'px';
-        move(pos, index > pos ? -width : (index < pos ? width : 0), 0);
+        var _dist = function() {
+            if ( index === pos ) {
+                return 0;
+            }
+            if ( index > pos ) {
+                return -width;
+            }
+            if ( pos - index === 1 ) {
+                return width;
+            }
+            return fullWidth;
+        };
+        move(pos, _dist(), 0);
       }
 
     }
@@ -136,6 +150,9 @@ function Swipe(container, options) {
 
       move(index, width * direction, slideSpeed || speed);
       move(to, 0, slideSpeed || speed);
+      if ( to + 1 < slides.length ) {
+          move( to + 1, width, slideSpeed || speed );
+      }
 
       if (options.continuous) move(circle(to - direction), -(width * direction), 0); // we need to get the next in place
       
@@ -377,6 +394,9 @@ function Swipe(container, options) {
 
             move(index, slidePos[index]-width, speed);
             move(circle(index+1), slidePos[circle(index+1)]-width, speed);
+            if ( index + 2 < slides.length ) {
+                move(circle(index+2), width, speed);
+            }
             index = circle(index+1);  
                       
           } else {
@@ -386,7 +406,7 @@ function Swipe(container, options) {
               move(circle(index-2), -width, 0);
 
             } else {
-              move(index+1, width, 0);
+              move(index+1, fullWidth, 0);
             }
 
             move(index, slidePos[index]+width, speed);
